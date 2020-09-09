@@ -6,24 +6,34 @@ credit_data = np.genfromtxt('credit.txt', delimiter=',', skip_header=True)
 array = np.array([1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1])
 array2 = np.array([1, 1, 1, 1])
 
+
 def impurity(arr):
-    p = np.sum(arr) / len(arr)
-    return p * (1 - p)
+    if len(arr) == 0:
+        return 0
+    else:
+        p = np.sum(arr) / len(arr)
+        return p * (1 - p)
 
 
 def bestsplit(x, y):
     lowestImp = 1
-    for i in range(len(x)):
-        arrays = split(x, i)
-        imp1 = impurity(arrays[0])
-        imp2 = impurity(arrays[1])
+    x_sorted = np.sort(x)
+    splitpoints = (x_sorted[0:len(x) - 1] + x_sorted[1:len(x)]) / 2
+    i = 0
+    for point in splitpoints:
+        imp1 = impurity(y[x < point])
+        imp2 = impurity(y[x > point])
         totalImp = imp1 + imp2
-        if totalImp < lowestImp:
+        print(totalImp)
+        if totalImp < lowestImp: #Je zou eigenlijk naar de grootste reduction moeten zoeken ipv de laagste impurity
             lowestImp = totalImp
             lowestIndex = i
-    return x[lowestIndex]
+        i += 1
+    return (splitpoints[lowestIndex])
+
 
 def split(x, i):
     return (x[0:i], x[i:])
 
-bestsplit(credit_data[:,3],credit_data[:,5])
+
+print(bestsplit(credit_data[:, 3], credit_data[:, 5]))
