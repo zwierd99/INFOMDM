@@ -11,43 +11,58 @@ def impurity(arr):
     return p * (1 - p)
 
 
-#print(impurity(array))
+# print(impurity(array))
 
-def bestsplit(data):
-    data_sorted = data[data[:, 3].argsort()]
-    income_sorted = data_sorted[:, 3]
-    # print(income_sorted)
-    income_len = len(income_sorted)
-    income_splitpoints = (income_sorted[0:income_len-1]+income_sorted[1:income_len])/2
-    # print(income_splitpoints)
-    stepsize = 1 / income_len
-    smallest_imp = 1
-    best_income_splitpoint = 0
-    for i in range(1, income_len):
-        left_list = data_sorted[:, 5][:i]
-        right_list = data_sorted[:, 5][i:]
-        a = stepsize * i
-        b = chanceof(0, left_list)
-        c = 1 - b
-        d = 1 - a
-        e = chanceof(0, right_list)
-        f = 1 - e
-        imp = a * b * c + d * e * f
-        print(imp)
-        if imp <= smallest_imp:
-            smallest_imp = imp
-            best_income_splitpoint = income_splitpoints[i-1]
+def best_split(data, labels):
+    """
+    Computes best split value on data
+    :param data:    numeric values
+    :param labels:  labels (0/1) of data
+    :return:    returns data value of the best possible split position
+    """
+    data, labels = zip(*sorted(zip(data, labels)))  # Sort both lists in the same order
 
-    return best_income_splitpoint
+    sorted_data_unique = np.array(sorted(set(data)))    # Remove duplicate values
+    labels = np.array(labels)
+
+    data_len = len(sorted_data_unique)
+    split_points = (sorted_data_unique[0:data_len - 1] + sorted_data_unique[1:data_len]) / 2
+    step_size = 1 / len(data)
+
+    lowest_impurity = 1
+    best_split_point = 0
+    for split in split_points:  # See classification trees - 1, slide 31 for more info
+        left_list = labels[data < split]
+        ratio_left = step_size * len(left_list)
+        p = chance_of(0, left_list)
+        left_eq = ratio_left * p * (1 - p)
+
+        right_list = labels[data > split]
+        ratio_right = 1 - ratio_left
+        q = chance_of(0, right_list)
+        right_eq = ratio_right * q * (1-q)
+
+        current_impurity = left_eq + right_eq
+        print(round(0.25 - current_impurity, 2))    # remove 0.25 for usage in different cases
+        if current_impurity <= lowest_impurity:
+            lowest_impurity = current_impurity
+            best_split_point = split
+
+    return best_split_point
 
 
-def chanceof(y, litty):
+def chance_of(x, litty):    # LITTY
+    """
+    Chance of certain element x in a list
+    :param x:   wanted value
+    :param litty:   list to search
+    :return:    occurences of x in litty
+    """
     count = 0
     for i in litty:
-        if i == y:
+        if i == x:
             count += 1
     return count / len(litty)
 
 
-#print(impurity(array))
-print(bestsplit(credit_data))
+print(best_split(credit_data[:, 3], credit_data[:, 5]))
