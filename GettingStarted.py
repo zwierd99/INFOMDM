@@ -13,23 +13,41 @@ def impurity(arr):
 
 #print(impurity(array))
 
-def bestsplit(x, y):
-    lowestImp = 1
-    for i in range(len(x)):
-        arrays = split(x, i)
-        imp1 = impurity(arrays[0])
-        imp2 = impurity(arrays[1])
-        prop1 = i/len(x)
-        prop2 = 1-prop1
-        totalImp = prop1*imp1 + prop2*imp2
-        if totalImp < lowestImp:
-            lowestImp = totalImp
-            lowestIndex = i
-    return x[lowestIndex]
+def bestsplit(data):
+    data_sorted = data[data[:, 3].argsort()]
+    income_sorted = data_sorted[:, 3]
+    # print(income_sorted)
+    income_len = len(income_sorted)
+    income_splitpoints = (income_sorted[0:income_len-1]+income_sorted[1:income_len])/2
+    # print(income_splitpoints)
+    stepsize = 1 / income_len
+    smallest_imp = 1
+    best_income_splitpoint = 0
+    for i in range(1, income_len):
+        left_list = data_sorted[:, 5][:i]
+        right_list = data_sorted[:, 5][i:]
+        a = stepsize * i
+        b = chanceof(0, left_list)
+        c = 1 - b
+        d = 1 - a
+        e = chanceof(0, right_list)
+        f = 1 - e
+        imp = a * b * c + d * e * f
+        print(imp)
+        if imp <= smallest_imp:
+            smallest_imp = imp
+            best_income_splitpoint = income_splitpoints[i-1]
+
+    return best_income_splitpoint
 
 
-def split(x, i):
-    return x[0:i], x[i:]
+def chanceof(y, litty):
+    count = 0
+    for i in litty:
+        if i == y:
+            count += 1
+    return count / len(litty)
 
 
-bestsplit(credit_data[:, 3], credit_data[:, 5])
+#print(impurity(array))
+print(bestsplit(credit_data))
