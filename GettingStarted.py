@@ -32,7 +32,7 @@ def best_split(data, labels):
     lowest_impurity = 1
     best_split_point = 0
     for split in split_points:  # See classification trees - 1, slide 31 for more info
-        left_list = labels[data < split]
+        left_list = labels[data <= split]
         ratio_left = step_size * len(left_list)
         p = chance_of(0, left_list)
         left_eq = ratio_left * p * (1 - p)
