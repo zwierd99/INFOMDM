@@ -4,9 +4,12 @@ import math
 
 
 class tree_grow:
-    def __init__(self, x, y, nmin, minleaf, nfeat):
+    def __init__(self, x, y):#, nmin, minleaf, nfeat):
         x = np.array(x)
-        xy_combined = np.append(x, y, axis=1)
+        y = np.expand_dims(np.transpose(np.array(y)), axis=1)
+        print(np.shape(x))
+        print(np.shape(y))
+        xy_combined = np.concatenate([x, y], axis=1)
         nodelist = [xy_combined]
 
         while nodelist:
@@ -15,7 +18,7 @@ class tree_grow:
             current_impurity = self.impurity(current_node)
 
             if current_impurity > 0:
-                feature_set_indices = self.draw_features(current_node[:, :-1], nfeat)
+                feature_set_indices = self.draw_features(current_node[:, :-1], (np.shape(current_node)[1]-1)) # nfeat
                 impurity, split_col, split_point = self.select_feature(current_node, feature_set_indices)
                 impurity_reduction = current_impurity - impurity # die ook ergens meegeven??
 
@@ -108,5 +111,5 @@ class tree_pred:
 
 
 example_arr = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
-
-tree_grow(example_arr)
+data = credit_data = np.genfromtxt('credit.txt', delimiter=',', skip_header=True)
+tree_grow(data[:, :-1], data[:, -1])
