@@ -1,13 +1,19 @@
 import numpy as np
 import random as rd
 import math
+from sklearn.metrics import confusion_matrix
 
 
 class tree_grow:
     def __init__(self, x, y, nmin, minleaf, nfeat):
-        # TODO: Do features need to be removed after they have been used?
-        # TODO: ----- NO because that would influence nfeat?
-
+        """
+        Grow a decision tree on data x with labels y, according to parameters nmin, minleaf and nfeat
+        :param x: data matrix containing attribute values
+        :param y: vector of class labels
+        :param nmin: number of minimal observations needed for splitting
+        :param minleaf: minimal number of observations remaining in a node after splitting
+        :param nfeat: number of features that should be considered for each split
+        """
         # Merge the data (x) and the respective labels(y) into a numpy array and add to the nodelist
         x = np.array(x)
         y = np.expand_dims(np.transpose(np.array(y)), axis=1)
@@ -19,6 +25,8 @@ class tree_grow:
 
         # Bool to check if we are in root to build up tree
         root = True
+
+        # Initialize whole tree
         tree = 0
 
         self.min_leaf = minleaf
@@ -38,21 +46,15 @@ class tree_grow:
             if current_impurity > 0 and np.shape(current_node.data)[0] >= nmin:
 
                 # Obtain the indices of the features that are considered
-                feature_set_indices = self.draw_features(current_node.data[:, :-1], nfeat) # (np.shape(current_node.data)[1]-1)) # fill nfeat here
+                feature_set_indices = self.draw_features(current_node.data[:, :-1], nfeat)
 
                 # Obtain values of best possible split from features selected above
                 impurity, split_col, split_point = self.select_feature(current_node.data, feature_set_indices)
-                impurity_reduction = current_impurity - impurity # die ook ergens meegeven??
+                impurity_reduction = current_impurity - impurity  # die ook ergens meegeven??
 
                 # Satisfy minleaf constraint
                 if split_point != -1:
-
                     left_node, right_node = self.select_children(current_node, split_col, split_point)
-
-                    # Remove used column from other still to be explored nodes
-                    # TODO: denk niet dat dit al goed werkt zo maar mss ook wel idk man moet nog ff testen op groter ding ofzo
-                    # for n in nodelist:
-                    #     np.delete(n.data, split_col, 1)
 
                     nodelist.append(left_node)
                     nodelist.append(right_node)
@@ -62,11 +64,21 @@ class tree_grow:
 
                     current_node.split_value = split_point
                     current_node.split_col = split_col
-        self.print_tree(tree)
-        # return tree
+        self.tree = tree
 
+    def give_tree(self):
+        """
+        Return built up tree
+        :return: tree
+        """
+        return self.print_tree(self.tree)
 
     def impurity(self, current_node):
+        """
+        Calculate impurity of current node
+        :param current_node:
+        :return:
+        """
         p = np.sum(current_node[:, -1]) / current_node[:, -1].shape[0]
         return p * (1 - p)
 
@@ -107,7 +119,7 @@ class tree_grow:
 
     def best_split(self, data, labels):
         """
-        Computes best split value on data
+        Computes best split value on a designated feature
         :param data:    numeric values
         :param labels:  labels (0/1) of data
         :return:    returns data value of the best possible split position
@@ -137,10 +149,8 @@ class tree_grow:
             right_eq = ratio_right * q * (1 - q)
 
             current_impurity = left_eq + right_eq
-            # print(round(current_impurity, 2))
-            if len(left_list) >= self.min_leaf and len(right_list) >= self.min_leaf and current_impurity <= lowest_impurity:
-                # print(len(left_list))
-                # print(len(right_list))
+            if len(left_list) >= self.min_leaf and len(
+                    right_list) >= self.min_leaf and lowest_impurity >= current_impurity:
                 lowest_impurity = current_impurity
                 best_split_point = split
 
@@ -171,34 +181,83 @@ class tree_grow:
         left_child = current_node.data[current_node.data[:, split_col] <= split_point]
         right_child = current_node.data[current_node.data[:, split_col] > split_point]
 
-        # delete used column from children
-        # TODO: BELANGRIJK OM TE CHECKEN OF DIT NODIG IS OF DAT GEBRUIKTE FEATURES OPNIEUW MOGEN WORDEN GEBRUIKT BIJ DECISION TREES
-        # left_child = np.delete(left_child, split_col, 1)
-        # right_child = np.delete(right_child, split_col, 1)
-
         # Transform raw data children to node children
-        left_node = node(left_child, current_node.depth+1, False)
-        right_node = node(right_child, current_node.depth+1, True)
+        left_node = node(left_child, current_node.depth + 1, False)
+        right_node = node(right_child, current_node.depth + 1, True)
 
         return left_node, right_node
 
     def print_tree(self, current_node):
+        """
+        Print tree in ordered structure, works recursively
+        :param current_node: current node
+        :return: prints tree
+        """
         if current_node.left_child:
-            print(" |\t"*current_node.depth, "|--- feature", current_node.split_col, "<=", current_node.split_value)
+            print(" |\t" * current_node.depth, "|--- feature", current_node.split_col, "<=", current_node.split_value)
             self.print_tree(current_node.left_child)
-            print(" |\t"*current_node.depth, "|--- feature", current_node.split_col, ">", current_node.split_value)
+            print(" |\t" * current_node.depth, "|--- feature", current_node.split_col, ">", current_node.split_value)
             self.print_tree(current_node.right_child)
         else:
-            print(" |\t"*(current_node.depth+1), "|---", current_node.data[:, -1])
+            print(" |\t" * (current_node.depth), "|---", self.majority(current_node))
+
+    def majority(self, current_node):
+        """
+        Calculate the majority label of the current node
+        :param current_node: node of which we want the majority label
+        :return: majority label (0/1)
+        """
+        labels = current_node.data[:, -1]
+        zero_sum = (labels == 0).sum()
+        one_sum = (labels == 1).sum()
+
+        if zero_sum >= one_sum:
+            return 0
+        else:
+            return 1
 
 
 class tree_pred:
     def __init__(self, x, tr):
-        x = 0
+        """
+        returns predicted labels of instances of x on tree tr
+        :param x: data which needs to be labeled
+        :param tr:
+        """
+        y = []
+
+        for row in x:
+            current_node = tr
+            while current_node.left_child:
+                if row[current_node.split_col] <= current_node.split_value:
+                    current_node = current_node.left_child
+                else:
+                    current_node = current_node.right_child
+
+            label = tree_grow.majority(tr, current_node)
+            y.append(label)
+
+        self.y = y
+
+    def return_preds(self):
+        """
+        Give prediction
+        :return: vector of predictions
+        """
+        return self.y
 
 
 class node:
     def __init__(self, x, dep, larger_than_bool, child=None, col=None, val=None):
+        """
+        Node data structure used in tree
+        :param x: data matrix containing attribute values
+        :param dep: depth of node
+        :param larger_than_bool: decides whether it is > (True) sign or <= (False)
+        :param child: child nodes of current node
+        :param col: feature column on which the split is performed
+        :param val: split value used for deciding left and right children
+        """
         self.data = x
         self.depth = dep
         self.larger_than = larger_than_bool
@@ -210,6 +269,18 @@ class node:
         self.right_child = child
 
 
-example_arr = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
-data = credit_data = np.genfromtxt('credit.txt', delimiter=',', skip_header=True)
-tree_grow(data[:, :-1], data[:, -1], 1, 3, (np.shape(data)[1]-1))
+# Test zooi
+
+dataa = np.genfromtxt('pima.txt', delimiter=',', skip_header=False)
+
+# boom laten goeien
+number_of_features = (np.shape(dataa)[1] - 1)
+grow_tree = tree_grow(dataa[:, :-1], dataa[:, -1], 20, 5, number_of_features)
+grow_tree.give_tree()
+
+# Test data op boom toepassen
+pred = tree_pred(dataa[:, :-1], grow_tree.tree)
+predictions = pred.return_preds()
+
+arr = confusion_matrix(dataa[:, -1], predictions)
+print(arr)
