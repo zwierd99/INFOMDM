@@ -4,10 +4,10 @@ import math
 
 
 class tree_grow:
-    def __init__(self, x, y):#, nmin, minleaf, nfeat):
-        # TODO: test algorithm
-        # TODO: remove used feature from other elements in node list
-
+    def __init__(self, x, y, nmin, minleaf, nfeat):
+        # TODO: Do features need to be removed after they have been used?
+        # TODO: ----- NO because that would influence nfeat?
+        # TODO: implement minleaf
 
         # Merge the data (x) and the respective labels(y) into a numpy array and add to the nodelist
         x = np.array(x)
@@ -15,8 +15,12 @@ class tree_grow:
 
         xy_combined = np.concatenate([x, y], axis=1)
 
-        xy_node = node(xy_combined)
+        xy_node = node(xy_combined, 0, False)
         nodelist = [xy_node]
+
+        # Bool to check if we are in root to build up tree
+        root = True
+        tree = 0
 
         # While there are still element left in the nodelist perform this
         while nodelist:
@@ -24,41 +28,39 @@ class tree_grow:
             rd.shuffle(nodelist)
             current_node = nodelist.pop()
 
+            # set root node to original node
+            if root:
+                tree = current_node
+                root = False
+
             current_impurity = self.impurity(current_node.data)
-            if current_impurity > 0:
+            if current_impurity > 0 and np.shape(current_node.data)[0] >= nmin:
 
                 # Obtain the indices of the features that are considered
-                feature_set_indices = self.draw_features(current_node.data[:, :-1], (np.shape(current_node.data)[1]-1)) # nfeat
+                feature_set_indices = self.draw_features(current_node.data[:, :-1], nfeat) # (np.shape(current_node.data)[1]-1)) # fill nfeat here
 
                 # Obtain values of best possible split from features selected above
                 impurity, split_col, split_point = self.select_feature(current_node.data, feature_set_indices)
                 impurity_reduction = current_impurity - impurity # die ook ergens meegeven??
 
-                # Determine splits according to the split point
-                left_child = current_node.data[current_node.data[:, split_col] <= split_point]
-                right_child = current_node.data[current_node.data[:, split_col] > split_point]
-                print(left_child[:, -1])
-                print(right_child[:, -1])
-
-                # delete used column from children
-                left_child = np.delete(left_child, split_col, 1)
-                right_child = np.delete(right_child, split_col, 1)
+                left_node, right_node = self.select_children(current_node, split_col, split_point)
 
                 # Remove used column from other still to be explored nodes
-                # TODO: denk niet dat dit al goed werkt zo
-                for n in nodelist:
-                    np.delete(n.data, split_col, 1)
-
-                # Transform raw data children to node children
-                left_node = node(left_child)
-                right_node = node(right_child)
+                # TODO: denk niet dat dit al goed werkt zo maar mss ook wel idk man moet nog ff testen op groter ding ofzo
+                # for n in nodelist:
+                #     np.delete(n.data, split_col, 1)
 
                 nodelist.append(left_node)
                 nodelist.append(right_node)
 
                 current_node.left_child = left_node
                 current_node.right_child = right_node
-                print()
+
+                current_node.split_value = split_point
+                current_node.split_col = split_col
+        self.print_tree(tree)
+        # return tree
+
 
     def impurity(self, current_node):
         p = np.sum(current_node[:, -1]) / current_node[:, -1].shape[0]
@@ -150,6 +152,38 @@ class tree_grow:
                 count += 1
         return count / len(litty)
 
+    def select_children(self, current_node, split_col, split_point):
+        """
+        Select children given the split points on the selected column
+        :param current_node:    parent node on which the split is performed
+        :param split_col:   index of column on which split is performed
+        :param split_point:     value of splitting point in the selected column
+        :return: return left and right child nodes
+        """
+        # Determine splits according to the split point
+        left_child = current_node.data[current_node.data[:, split_col] <= split_point]
+        right_child = current_node.data[current_node.data[:, split_col] > split_point]
+
+        # delete used column from children
+        # TODO: BELANGRIJK OM TE CHECKEN OF DIT NODIG IS OF DAT GEBRUIKTE FEATURES OPNIEUW MOGEN WORDEN GEBRUIKT BIJ DECISION TREES
+        # left_child = np.delete(left_child, split_col, 1)
+        # right_child = np.delete(right_child, split_col, 1)
+
+        # Transform raw data children to node children
+        left_node = node(left_child, current_node.depth+1, False)
+        right_node = node(right_child, current_node.depth+1, True)
+
+        return left_node, right_node
+
+    def print_tree(self, current_node):
+        if current_node.left_child:
+            print(" |\t"*current_node.depth, "|--- feature", current_node.split_col, "<=", current_node.split_value)
+            self.print_tree(current_node.left_child)
+            print(" |\t"*current_node.depth, "|--- feature", current_node.split_col, ">", current_node.split_value)
+            self.print_tree(current_node.right_child)
+        else:
+            print(" |\t"*(current_node.depth+1), "|---", current_node.data[:, -1])
+
 
 class tree_pred:
     def __init__(self, x, tr):
@@ -157,12 +191,18 @@ class tree_pred:
 
 
 class node:
-    def __init__(self, x, child=None):
+    def __init__(self, x, dep, larger_than_bool, child=None, col=None, val=None):
         self.data = x
+        self.depth = dep
+        self.larger_than = larger_than_bool
+
+        self.split_col = col
+        self.split_value = val
+
         self.left_child = child
         self.right_child = child
 
 
 example_arr = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
 data = credit_data = np.genfromtxt('credit.txt', delimiter=',', skip_header=True)
-tree_grow(data[:, :-1], data[:, -1])
+tree_grow(data[:, :-1], data[:, -1], 4, 3, (np.shape(data)[1]-1))
