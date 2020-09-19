@@ -7,7 +7,6 @@ class tree_grow:
     def __init__(self, x, y, nmin, minleaf, nfeat):
         # TODO: Do features need to be removed after they have been used?
         # TODO: ----- NO because that would influence nfeat?
-        # TODO: implement minleaf
 
         # Merge the data (x) and the respective labels(y) into a numpy array and add to the nodelist
         x = np.array(x)
@@ -21,6 +20,8 @@ class tree_grow:
         # Bool to check if we are in root to build up tree
         root = True
         tree = 0
+
+        self.min_leaf = minleaf
 
         # While there are still element left in the nodelist perform this
         while nodelist:
@@ -43,21 +44,24 @@ class tree_grow:
                 impurity, split_col, split_point = self.select_feature(current_node.data, feature_set_indices)
                 impurity_reduction = current_impurity - impurity # die ook ergens meegeven??
 
-                left_node, right_node = self.select_children(current_node, split_col, split_point)
+                # Satisfy minleaf constraint
+                if split_point != -1:
 
-                # Remove used column from other still to be explored nodes
-                # TODO: denk niet dat dit al goed werkt zo maar mss ook wel idk man moet nog ff testen op groter ding ofzo
-                # for n in nodelist:
-                #     np.delete(n.data, split_col, 1)
+                    left_node, right_node = self.select_children(current_node, split_col, split_point)
 
-                nodelist.append(left_node)
-                nodelist.append(right_node)
+                    # Remove used column from other still to be explored nodes
+                    # TODO: denk niet dat dit al goed werkt zo maar mss ook wel idk man moet nog ff testen op groter ding ofzo
+                    # for n in nodelist:
+                    #     np.delete(n.data, split_col, 1)
 
-                current_node.left_child = left_node
-                current_node.right_child = right_node
+                    nodelist.append(left_node)
+                    nodelist.append(right_node)
 
-                current_node.split_value = split_point
-                current_node.split_col = split_col
+                    current_node.left_child = left_node
+                    current_node.right_child = right_node
+
+                    current_node.split_value = split_point
+                    current_node.split_col = split_col
         self.print_tree(tree)
         # return tree
 
@@ -98,6 +102,7 @@ class tree_grow:
                 lowest_impurity = impurity
                 best_col_index = col
                 best_split_point = split_point
+
         return lowest_impurity, best_col_index, best_split_point
 
     def best_split(self, data, labels):
@@ -119,7 +124,7 @@ class tree_grow:
         step_size = 1 / len(data)
 
         lowest_impurity = 1
-        best_split_point = 0
+        best_split_point = -1
         for split in split_points:  # See classification trees - 1, slide 31 for more info
             left_list = labels[data <= split]
             ratio_left = step_size * len(left_list)
@@ -133,7 +138,9 @@ class tree_grow:
 
             current_impurity = left_eq + right_eq
             # print(round(current_impurity, 2))
-            if current_impurity <= lowest_impurity:
+            if len(left_list) >= self.min_leaf and len(right_list) >= self.min_leaf and current_impurity <= lowest_impurity:
+                # print(len(left_list))
+                # print(len(right_list))
                 lowest_impurity = current_impurity
                 best_split_point = split
 
@@ -205,4 +212,4 @@ class node:
 
 example_arr = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
 data = credit_data = np.genfromtxt('credit.txt', delimiter=',', skip_header=True)
-tree_grow(data[:, :-1], data[:, -1], 4, 3, (np.shape(data)[1]-1))
+tree_grow(data[:, :-1], data[:, -1], 1, 3, (np.shape(data)[1]-1))
