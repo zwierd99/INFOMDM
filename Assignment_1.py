@@ -284,3 +284,5 @@ predictions = pred.return_preds()
 
 arr = confusion_matrix(dataa[:, -1], predictions)
 print(arr)
+
+print("yeet")
