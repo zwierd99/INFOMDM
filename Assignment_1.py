@@ -65,7 +65,6 @@ class tree_grow:
                     current_node.split_value = split_point
                     current_node.split_col = split_col
         self.tree = tree
-
     def give_tree(self):
         """
         Return built up tree
@@ -239,6 +238,7 @@ class tree_pred:
 
         self.y = y
 
+
     def return_preds(self):
         """
         Give prediction
@@ -270,17 +270,17 @@ class node:
 
 
 # Test zooi
-
-dataa = np.genfromtxt('pima.txt', delimiter=',', skip_header=False)
-
-# boom laten goeien
-number_of_features = (np.shape(dataa)[1] - 1)
-grow_tree = tree_grow(dataa[:, :-1], dataa[:, -1], 20, 5, number_of_features)
-grow_tree.give_tree()
-
-# Test data op boom toepassen
-pred = tree_pred(dataa[:, :-1], grow_tree.tree)
-predictions = pred.return_preds()
-
-arr = confusion_matrix(dataa[:, -1], predictions)
-print(arr)
+#
+# dataa = np.genfromtxt('pima.txt', delimiter=',', skip_header=False)
+#
+# # boom laten goeien
+# number_of_features = (np.shape(dataa)[1] - 1)
+# grow_tree = tree_grow(dataa[:, :-1], dataa[:, -1], 20, 5, number_of_features)
+# grow_tree.give_tree()
+#
+# # Test data op boom toepassen
+# pred = tree_pred(dataa[:, :-1], grow_tree.tree)
+# predictions = pred.return_preds()
+#
+# arr = confusion_matrix(dataa[:, -1], predictions)
+# print(arr)
