@@ -29,13 +29,13 @@ def tree_pred_b(trees, x):
     """
     predictions = []
     for tree in trees:
-        predictions.append(tree_pred(x, tree.tree))
+        predictions.append(tree_pred(x, tree))
 
     y = []
     for column in range(0, len(predictions[0].y)):
         count = 0
         for row in range(0,len(predictions)):
-            count += predictions[row].y[column]
+            count += predictions[row][column]
 
         if float(count)/len(predictions[0].y) > 0.5:
             y.append(1)
@@ -52,5 +52,3 @@ def test():
     preds = tree_pred_b(trees, dataa[:, :-1])
     input("gewonnen")
 
-
-test()
