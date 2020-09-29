@@ -16,17 +16,9 @@ def impurity(arr):
 
 # print(impurity(array))
 
-def best_split(data, labels):
-    """
-    Computes best split value on data
-    :param data:    numeric values
-    :param labels:  labels (0/1) of data
-    :return:    returns data value of the best possible split position
-    """
-    data, labels = zip(*sorted(zip(data, labels)))  # Sort both lists in the same order
+def split(x, i):
+    return (x[0:i], x[i:])
 
-    sorted_data_unique = np.array(sorted(set(data)))    # Remove duplicate values
-    labels = np.array(labels)
 
     data_len = len(sorted_data_unique)
     split_points = (sorted_data_unique[0:data_len - 1] + sorted_data_unique[1:data_len]) / 2
