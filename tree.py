@@ -266,7 +266,7 @@ def tree_grow_b(x, y, nmin, minleaf, nfeat, m):
         trees.append(tree_grow(xnew, ynew, nmin, minleaf, nfeat))
     return trees
 
-def tree_pred_b(trees, x):
+def tree_pred_b(x, trees):
     """
     Predicts the classification of x, given a number of trees.
     :param trees: list of trees
@@ -278,12 +278,12 @@ def tree_pred_b(trees, x):
         predictions.append(tree_pred(x, tree))
 
     y = []
-    for column in range(0, len(predictions[0].y)):
+    for column in range(0, len(predictions[0])):
         count = 0
-        for row in range(0,len(predictions)):
-            count += predictions[row].y[column]
+        for row in range(0,len(predictions[:])):
+            count += predictions[row][column]
 
-        if float(count)/len(predictions[0].y) > 0.5:
+        if float(count)/len(predictions[:]) > 0.5:
             y.append(1)
         else:
             y.append(0)
@@ -329,10 +329,5 @@ class node:
 #
 # arr = confusion_matrix(dataa[:, -1], predictions)
 # print(arr)
-c = np.loadtxt('credit.txt', delimiter=',', skiprows=1)
-x, y = c[:,0:5], c[:,5]
 
-trs = tree_grow_b(x=x, y=y, nmin=2, minleaf=1, nfeat=4, m=50)
-y_pred = tree_pred_b(x, trs)
-print('%.2f' % np.mean(y == y_pred))
 
