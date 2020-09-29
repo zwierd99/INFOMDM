@@ -272,22 +272,22 @@ class node:
         self.right_child = child
 
 
-# Test zooi
+# # Test zooi
+#
+# dataa = np.genfromtxt('pima.txt', delimiter=',', skip_header=False)
+#
+# # boom laten goeien
+# number_of_features = (np.shape(dataa)[1] - 1)
+# grow_tree = tree_grow(dataa[:, :-1], dataa[:, -1], 20, 5, number_of_features)
+# print_tree(grow_tree)
+#
+# # Test data op boom toepassen
+# # pred = tree_pred(dataa[:, :-1], grow_tree.tree)
+# # predictions = pred.return_preds()
+#
+# predictions = tree_pred(dataa[:, :-1], grow_tree)
+#
+# arr = confusion_matrix(dataa[:, -1], predictions)
+# print(arr)
 
-dataa = np.genfromtxt('pima.txt', delimiter=',', skip_header=False)
 
-# boom laten goeien
-number_of_features = (np.shape(dataa)[1] - 1)
-grow_tree = tree_grow(dataa[:, :-1], dataa[:, -1], 20, 5, number_of_features)
-print_tree(grow_tree)
-
-# Test data op boom toepassen
-# pred = tree_pred(dataa[:, :-1], grow_tree.tree)
-# predictions = pred.return_preds()
-
-predictions = tree_pred(dataa[:, :-1], grow_tree)
-
-arr = confusion_matrix(dataa[:, -1], predictions)
-print(arr)
-
-print("yeet")
