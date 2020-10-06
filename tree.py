@@ -164,7 +164,7 @@ def best_split(data, labels, minleaf):
     return best_split_point, lowest_impurity
 
 
-def chance_of(x, litty):  # LITTY
+def chance_of(x, total):  # LITTY
     """
     Chance of certain element x in a list
     :param x:   wanted value
@@ -172,10 +172,10 @@ def chance_of(x, litty):  # LITTY
     :return:    occurences of x in litty
     """
     count = 0
-    for i in litty:
+    for i in total:
         if i == x:
             count += 1
-    return count / len(litty)
+    return count / len(total)
 
 
 def select_children(current_node, split_col, split_point):

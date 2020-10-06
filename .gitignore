@@ -132,3 +132,5 @@ dmypy.json
 .idea/workspace.xml
 
 .idea/
+
+trees.pkl

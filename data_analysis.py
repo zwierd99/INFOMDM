@@ -1,6 +1,9 @@
 import numpy as np
 import tree
 import math
+import sklearn
+import pickle
+import os.path
 
 class Extract:
     def __init__(self, file_path='data/eclipse-metrics-packages-2.0.csv'):
@@ -15,15 +18,32 @@ class Extract:
         prerelease_bugs = np.reshape(prerelease_bugs, (-1, 1))
         predictor_variables = np.append(prerelease_bugs, table1_metriks, axis=1).astype(np.float)
         #print(predictor_variables)
-        self.x = predictor_variables
+        self.training_x = predictor_variables
         #print(data[1:,3])
-        self.y = data[1:,3].astype(np.int)
+        y_to_binary = (data[1:, 3].astype(int) >= 1).astype(int)
+        self.training_y = y_to_binary
+
+
+        data2 = np.genfromtxt('data/eclipse-metrics-packages-3.0.csv', delimiter=';', skip_header=False, dtype=None, encoding=None)
+        prerelease_bugs2 = data2[1:, 2]  # skip first element as it's the column title.
+        table1_metriks2 = data2[1:, 4:44]
+        prerelease_bugs2 = np.reshape(prerelease_bugs2, (-1, 1))
+        predictor_variables2 = np.append(prerelease_bugs2, table1_metriks2, axis=1).astype(np.float)
+        # print(predictor_variables)
+        self.testing_x = predictor_variables2
+        # print(data[1:,3])
+        y_to_binary2 = (data2[1:, 3].astype(int) >= 1).astype(int)
+        self.testing_y = y_to_binary2
+
 
 class Tree:
     def __init__(self, x, y, nmin, minleaf, nfeat):
         self.tree = None
+        self.tree.name = "Tree"
         self.bag = None
+        self.bag.name = "Bag"
         self.forest = None
+        self.forest.name = "Forest"
         self.train_trees(x, y, nmin, minleaf, nfeat)
 
     def train_trees(self, x, y, nmin, minleaf, nfeat):
@@ -39,18 +59,46 @@ class Tree:
         self.tree = tree.tree_grow(x, y, nmin, minleaf, nfeat)  # Needed for analysis 1
         self.bag = tree.tree_grow_b(x, y, nmin, minleaf, nfeat, 100)  # Needed for analysis 2
         self.forest = tree.tree_grow_b(x, y, nmin, minleaf, math.floor(math.sqrt(nfeat)),
-                                       100)  # Needed for analysis 3 (forest != bagging maar idk??)
-    def Analyze(self):
+                                       100)  # Needed for analysis 3
+    def Analyze(self, data):
         """
         Analyzes the created trees.
         :return: Precision, accuracy and recall, and a confusion matrix for each tree.
         """
+        #prediction = tree.tree_pred(data.testing_x, self.tree)
+        predicted_y_tree = tree.tree_pred(data.testing_x, self.tree)
+        predicted_y_bag = tree.tree_pred_b(data.testing_x, self.bag)
+        predicted_y_forest = tree.tree_pred_b(data.testing_x, self.forest)
+        for prediction in [predicted_y_tree, predicted_y_bag, predicted_y_forest]:
+            print(sklearn.metrics.precision_score(data.testing_y, prediction))
+            print(sklearn.metrics.recall_score(data.testing_y, prediction))
+            print(sklearn.metrics.accuracy_score(data.testing_y, prediction))
+            print(sklearn.metrics.confusion_matrix(data.testing_y, prediction))
+            with open("results.txt", "a+") as f:
+                #f.write("Showing results for " + prediction. + "\n")
+                f.write("Precision: " + str(round(sklearn.metrics.precision_score(data.testing_y, prediction), 3)) + "\n")
+                f.write("Recall: " + str(round(sklearn.metrics.recall_score(data.testing_y, prediction), 3)) + "\n")
+                f.write("Accuracy: " + str(round(sklearn.metrics.accuracy_score(data.testing_y, prediction), 3)) + "\n")
+                f.write("Confusion Matrix \n")
+                f.write(np.array2string(sklearn.metrics.confusion_matrix(data.testing_y, prediction)) + "\n")
+                f.write("------------------------------------------------------------\n\n")
+
 
 
 def main():
     data = Extract()
-    trees = Tree(data.x, data.y, 15, 5, 41)
-    trees.Analyze()
+    if not os.path.exists('trees.pkl'):
+        trees = Tree(data.training_x, data.training_y, 15, 5, 41)
+        f = open('trees.pkl', 'wb')
+        pickle.dump(trees, f)
+        f.close()
+    else:
+        f = open('trees.pkl', 'rb')
+        trees = pickle.load(f)
+        f.close()
+
+    #print(tree.tree_pred(data.training_x, trees.tree))
+    trees.Analyze(data)
 
 
 
