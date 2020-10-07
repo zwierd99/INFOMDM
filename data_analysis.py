@@ -39,11 +39,11 @@ class Extract:
 class Tree:
     def __init__(self, x, y, nmin, minleaf, nfeat):
         self.tree = None
-        self.tree.name = "Tree"
+        # self.tree.name = "Tree"
         self.bag = None
-        self.bag.name = "Bag"
+        # self.bag.name = "Bag"
         self.forest = None
-        self.forest.name = "Forest"
+        # self.forest.name = "Forest"
         self.train_trees(x, y, nmin, minleaf, nfeat)
 
     def train_trees(self, x, y, nmin, minleaf, nfeat):
@@ -69,6 +69,7 @@ class Tree:
         predicted_y_tree = tree.tree_pred(data.testing_x, self.tree)
         predicted_y_bag = tree.tree_pred_b(data.testing_x, self.bag)
         predicted_y_forest = tree.tree_pred_b(data.testing_x, self.forest)
+        open("results.txt", "w")
         for prediction in [predicted_y_tree, predicted_y_bag, predicted_y_forest]:
             print(sklearn.metrics.precision_score(data.testing_y, prediction))
             print(sklearn.metrics.recall_score(data.testing_y, prediction))
@@ -82,6 +83,8 @@ class Tree:
                 f.write("Confusion Matrix \n")
                 f.write(np.array2string(sklearn.metrics.confusion_matrix(data.testing_y, prediction)) + "\n")
                 f.write("------------------------------------------------------------\n\n")
+
+
 
 
 
