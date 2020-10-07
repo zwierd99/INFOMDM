@@ -2,7 +2,11 @@ import numpy as np
 import random as rd
 import math
 from sklearn.metrics import confusion_matrix
-
+"""
+Dani Krebbers     6215327
+Lianne Roest      6200508
+Zwierd Grotenhuis 6271669
+"""
 
 def tree_grow(x, y, nmin, minleaf, nfeat):
     """
