@@ -209,8 +209,10 @@ def print_tree(current_node):
     """
     if current_node.left_child:
         print(" |\t" * current_node.depth, "|--- feature", current_node.split_col, "<=", current_node.split_value)
+        print(" |\t" * (current_node.depth), "|---", majority(current_node))
         print_tree(current_node.left_child)
         print(" |\t" * current_node.depth, "|--- feature", current_node.split_col, ">", current_node.split_value)
+        print(" |\t" * (current_node.depth), "|---", majority(current_node))
         print_tree(current_node.right_child)
     else:
         print(" |\t" * (current_node.depth), "|---", majority(current_node))
@@ -225,11 +227,14 @@ def majority(current_node):
     labels = current_node.data[:, -1]
     zero_sum = (labels == 0).sum()
     one_sum = (labels == 1).sum()
-
+    print("1s:" + str(one_sum))
+    print("0s:" + str(zero_sum))
     if zero_sum >= one_sum:
         return 0
     else:
         return 1
+
+
 
 
 def tree_pred(x, tr):

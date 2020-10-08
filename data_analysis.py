@@ -69,7 +69,7 @@ class Tree:
         predicted_y_tree = tree.tree_pred(data.testing_x, self.tree)
         predicted_y_bag = tree.tree_pred_b(data.testing_x, self.bag)
         predicted_y_forest = tree.tree_pred_b(data.testing_x, self.forest)
-        open("results.txt", "w")
+        tree.print_tree(self.tree)
         for prediction in [predicted_y_tree, predicted_y_bag, predicted_y_forest]:
             print(sklearn.metrics.precision_score(data.testing_y, prediction))
             print(sklearn.metrics.recall_score(data.testing_y, prediction))
@@ -84,9 +84,22 @@ class Tree:
                 f.write(np.array2string(sklearn.metrics.confusion_matrix(data.testing_y, prediction)) + "\n")
                 f.write("------------------------------------------------------------\n\n")
 
-
-
-
+    # def calculate_majority(self, data):
+    #     training_y = np.reshape(data.training_y, (-1, 1))
+    #     complete_table = np.append(data.training_x, training_y, axis=1)
+    #     #print(complete_table[:,38])
+    #     split_f0 = complete_table[complete_table[:,0] <= 4.5]
+    #     split_f0_f39 = split_f0[split_f0[:,39] < 26.5]
+    #
+    #     count = 0
+    #     for row in split_f0_f39:
+    #         if row[41] == 1:
+    #             count += 1
+    #     count = count/len(split_f0_f39)
+    #     print(count)
+    #     print(len(split_f0_f39))
+    #     print(split_f0_f39)
+    #     #print(complete_table)
 
 def main():
     data = Extract()
@@ -101,8 +114,9 @@ def main():
         f.close()
 
     #print(tree.tree_pred(data.training_x, trees.tree))
-    trees.Analyze(data)
-
+    # trees.Analyze(data)
+    tree.print_tree(trees.tree)
+    #trees.calculate_majority(data)
 
 
 main()
