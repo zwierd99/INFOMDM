@@ -4,6 +4,7 @@ import math
 import sklearn
 import pickle
 import os.path
+from mlxtend.evaluate import mcnemar_table, mcnemar
 
 class Extract:
     def __init__(self, file_path='data/eclipse-metrics-packages-2.0.csv'):
@@ -69,7 +70,14 @@ class Tree:
         predicted_y_tree = tree.tree_pred(data.testing_x, self.tree)
         predicted_y_bag = tree.tree_pred_b(data.testing_x, self.bag)
         predicted_y_forest = tree.tree_pred_b(data.testing_x, self.forest)
-        tree.print_tree(self.tree)
+
+        self.mc_mota(predicted_y_tree, predicted_y_bag, data)
+        self.mc_mota(predicted_y_tree, predicted_y_forest, data)
+        self.mc_mota(predicted_y_bag, predicted_y_forest, data)
+
+
+        # tree.print_tree(self.tree)
+        open("results.txt", "w")
         for prediction in [predicted_y_tree, predicted_y_bag, predicted_y_forest]:
             print(sklearn.metrics.precision_score(data.testing_y, prediction))
             print(sklearn.metrics.recall_score(data.testing_y, prediction))
@@ -84,22 +92,18 @@ class Tree:
                 f.write(np.array2string(sklearn.metrics.confusion_matrix(data.testing_y, prediction)) + "\n")
                 f.write("------------------------------------------------------------\n\n")
 
-    # def calculate_majority(self, data):
-    #     training_y = np.reshape(data.training_y, (-1, 1))
-    #     complete_table = np.append(data.training_x, training_y, axis=1)
-    #     #print(complete_table[:,38])
-    #     split_f0 = complete_table[complete_table[:,0] <= 4.5]
-    #     split_f0_f39 = split_f0[split_f0[:,39] < 26.5]
-    #
-    #     count = 0
-    #     for row in split_f0_f39:
-    #         if row[41] == 1:
-    #             count += 1
-    #     count = count/len(split_f0_f39)
-    #     print(count)
-    #     print(len(split_f0_f39))
-    #     print(split_f0_f39)
-    #     #print(complete_table)
+    def mc_mota(self, y1, y2, data):
+        y_target = np.array(data.testing_y)
+        tb = mcnemar_table(y_target=y_target,
+                           y_model1=np.array(y1),
+                           y_model2=np.array(y2))
+
+        print(tb)
+        chi2, p = mcnemar(ary=tb)
+
+        print('chi-squared:', chi2)
+        print('p-value:', p)
+        print()
 
 def main():
     data = Extract()
@@ -114,9 +118,8 @@ def main():
         f.close()
 
     #print(tree.tree_pred(data.training_x, trees.tree))
-    # trees.Analyze(data)
-    tree.print_tree(trees.tree)
-    #trees.calculate_majority(data)
+    trees.Analyze(data)
+    # tree.print_tree(trees.tree)
 
 
 main()
