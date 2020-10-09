@@ -32,12 +32,12 @@ def tree_pred_b(trees, x):
         predictions.append(tree_pred(x, tree))
 
     y = []
-    for column in range(0, len(predictions[0].y)):
+    for column in range(0, len(predictions[0].training_y)):
         count = 0
         for row in range(0,len(predictions)):
             count += predictions[row][column]
 
-        if float(count)/len(predictions[0].y) > 0.5:
+        if float(count)/len(predictions[0].training_y) > 0.5:
             y.append(1)
         else:
             y.append(0)
