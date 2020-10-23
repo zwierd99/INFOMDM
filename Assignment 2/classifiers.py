@@ -6,8 +6,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 
-def main():
-    all_data = features.add_features()
+def main(with_bi_grams):
+    all_data = features.add_features(with_bi_grams)
     tr_x, tr_y, te_x, te_y = split_data(all_data)
 
     mnb_y = multinomial_naive_bayes(tr_x, tr_y, te_x)
@@ -59,7 +59,6 @@ def show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf):
 
 
 def multinomial_naive_bayes(tr_x, tr_y, te_x):
-
     mnb = MultinomialNB()
     y_pred = generic_classifier(mnb, tr_x, tr_y, te_x)
 
@@ -95,4 +94,7 @@ def generic_classifier(classifier, tr_x, tr_y, te_x):
     return y_pred
 
 
-main()
+print("Without bi_grams:")
+main(False)
+print("\nWith bi_grams:")
+main(True)
