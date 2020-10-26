@@ -5,8 +5,8 @@ import pandas as pd
 
 # nltk.download('wordnet')
 
-min_uni_gram_count = 100
-min_bi_gram_count = 20
+min_uni_gram_count = 100    # 30 is wel gucci
+min_bi_gram_count = 100     # 10 is wel gucci
 
 
 def add_features(with_bi_grams):
@@ -27,6 +27,7 @@ def add_features(with_bi_grams):
         features = np.append(features, bi_gram_columns, axis=1)
 
     features = features.transpose()
+    print(features.shape)
     data_with_features = np.insert(combined_data[:, :-1], -1, features, axis=1)
 
     return data_with_features
