@@ -17,20 +17,21 @@ def add_features(with_bi_grams):
     test_data = np.concatenate((deceptive_test, truthful_test), axis=0)
     combined_data = np.concatenate((train_data, test_data), axis=0)
 
-    uni_gram_columns = create_uni_gram_columns(combined_data)
+    uni_gram_columns, column_headers = create_uni_gram_columns(combined_data)
 
     features = np.array(char_length(combined_data))
     features = np.append(features, uni_gram_columns, axis=1)
 
     if with_bi_grams:
-        bi_gram_columns = create_bi_gram_columns(combined_data)
+        bi_gram_columns, column_headers_2 = create_bi_gram_columns(combined_data)
         features = np.append(features, bi_gram_columns, axis=1)
+        column_headers = column_headers + column_headers_2
 
     features = features.transpose()
     print(features.shape)
     data_with_features = np.insert(combined_data[:, :-1], -1, features, axis=1)
 
-    return data_with_features
+    return data_with_features, column_headers
 
 
 def create_uni_gram_columns(data):
@@ -46,9 +47,9 @@ def create_uni_gram_columns(data):
         if uni_gram_dict[key] > min_uni_gram_count:
             non_sparse_uni_gram_dict[key] = uni_gram_dict[key]
 
-    filled_uni_grams = fill_uni_gram_columns(data, non_sparse_uni_gram_dict)
+    filled_uni_grams, column_headers = fill_uni_gram_columns(data, non_sparse_uni_gram_dict)
 
-    return filled_uni_grams
+    return filled_uni_grams, column_headers
 
 
 def fill_uni_gram_columns(data, uni_gram_dict):
@@ -59,7 +60,11 @@ def fill_uni_gram_columns(data, uni_gram_dict):
             if word in uni_gram_dict:
                 harry_df.at[row, word] += 1
 
-    return harry_df.to_numpy()
+    column_headers = []
+    for col in harry_df.columns:
+        column_headers.append(col)
+
+    return harry_df.to_numpy(), column_headers
 
 
 def create_bi_gram_columns(data):
@@ -75,9 +80,9 @@ def create_bi_gram_columns(data):
         if bi_gram_dict[key] > min_bi_gram_count:
             non_sparse_bi_gram_dict[key] = bi_gram_dict[key]
 
-    filled_bi_grams = fill_bi_gram_columns(data, non_sparse_bi_gram_dict)
+    filled_bi_grams, column_headers = fill_bi_gram_columns(data, non_sparse_bi_gram_dict)
 
-    return filled_bi_grams
+    return filled_bi_grams, column_headers
 
 
 def fill_bi_gram_columns(data, bi_gram_dict):
@@ -87,7 +92,11 @@ def fill_bi_gram_columns(data, bi_gram_dict):
             if bi_gram in bi_gram_dict:
                 harry_df.at[row, bi_gram] += 1
 
-    return harry_df.to_numpy()
+    column_headers = []
+    for col in harry_df.columns:
+        column_headers.append(col)
+
+    return harry_df.to_numpy(), column_headers
 
 
 def char_length(data):

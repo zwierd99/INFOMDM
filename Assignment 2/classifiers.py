@@ -6,23 +6,26 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
+from collections import Counter
 
 
 def main(with_bi_grams):
-    all_data = features.add_features(with_bi_grams)
+    all_data, column_headers = features.add_features(with_bi_grams)
     tr_x, tr_y, te_x, te_y = split_data(all_data)
 
-    mnb_y = multinomial_naive_bayes(tr_x, tr_y, te_x)
+    mnb_y, coef_dict_mnb = multinomial_naive_bayes(tr_x, tr_y, te_x, column_headers, "MNB")
     mnb_perf = performance(te_y, mnb_y, "MNB")
 
-    rlr_y = regularized_logistic_regression(tr_x, tr_y, te_x)
+    rlr_y, coef_dict_rlr = regularized_logistic_regression(tr_x, tr_y, te_x, column_headers, "RLR")
     rlr_perf = performance(te_y, rlr_y, "RLR")
 
-    ct_y = classification_trees(tr_x, tr_y, te_x)
+    ct_y, coef_dict_ct = classification_trees(tr_x, tr_y, te_x, column_headers, "CT")
     ct_perf = performance(te_y, ct_y, "CT")
 
-    rf_y = random_forests(tr_x, tr_y, te_x)
+    rf_y, coef_dict_rf = random_forests(tr_x, tr_y, te_x, column_headers, "RF")
     rf_perf = performance(te_y, rf_y, "RF")
+
+    best_features(coef_dict_mnb, coef_dict_rlr, coef_dict_ct, coef_dict_rf)
 
     show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf)
 
@@ -62,7 +65,22 @@ def show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf):
     print("====================================================================================")
 
 
-def multinomial_naive_bayes(tr_x, tr_y, te_x):
+def best_features(coef_dict_mnb, coef_dict_rlr, coef_dict_ct, coef_dict_rf):
+    # TODO: Combineren van verschillende lijsten om een feature importance list te krijgen, weten nog niet precies hoe
+    # TODO: mss ff steven vragen
+
+    print("MNB_features:\n", coef_dict_mnb[:5], "\n", coef_dict_mnb[-5:])
+    print("RLR_features:\n", coef_dict_rlr[:5], "\n", coef_dict_rlr[-5:])
+    print("CT_features:\n", coef_dict_ct[:5], "\n", coef_dict_ct[-5:])
+    print("RF_features:\n", coef_dict_rf[:5], "\n", coef_dict_rf[-5:])
+
+    # TODO: Dit werkt niet helemaal, maar het heeft wel de spirit te pakken
+    # combined_dict = Counter(coef_dict_mnb) + Counter(coef_dict_rlr) + Counter(coef_dict_ct) + Counter(coef_dict_rf)
+    # combined_dict = {k: v for k, v in sorted(combined_dict.items(), key=lambda item: item[1])}
+    # print("All_features:\n", combined_dict[:5], "\n", combined_dict[-5:])
+
+
+def multinomial_naive_bayes(tr_x, tr_y, te_x, column_headers, class_type):
     mnb = MultinomialNB()
 
     # Additive (Laplace/Lidstone) smoothing parameter (0 for no smoothing).
@@ -75,12 +93,12 @@ def multinomial_naive_bayes(tr_x, tr_y, te_x):
     random_grid = {"alpha": alpha,
                    "fit_prior": fit_prior,
                    "class_prior": class_prior}
-    y_pred = generic_classifier(mnb, tr_x, tr_y, te_x, random_grid)
+    y_pred, coef_dict = generic_classifier(mnb, tr_x, tr_y, te_x, random_grid, column_headers, class_type)
 
-    return y_pred
+    return y_pred, coef_dict
 
 
-def regularized_logistic_regression(tr_x, tr_y, te_x):
+def regularized_logistic_regression(tr_x, tr_y, te_x, column_headers, class_type):
     rlr = LogisticRegression()
 
     # Used to specify the norm used in the penalization
@@ -93,12 +111,12 @@ def regularized_logistic_regression(tr_x, tr_y, te_x):
     random_grid = {"penalty": penalty,
                    "C": c,
                    "class_weight": class_weight}
-    y_pred = generic_classifier(rlr, tr_x, tr_y, te_x, random_grid)
+    y_pred, coef_dict = generic_classifier(rlr, tr_x, tr_y, te_x, random_grid, column_headers, class_type)
 
-    return y_pred
+    return y_pred, coef_dict
 
 
-def classification_trees(tr_x, tr_y, te_x):
+def classification_trees(tr_x, tr_y, te_x, column_headers, class_type):
     ct = DecisionTreeClassifier()
 
     # Number of features to consider at every split
@@ -118,12 +136,12 @@ def classification_trees(tr_x, tr_y, te_x):
                    'min_samples_split': min_samples_split,
                    'min_samples_leaf': min_samples_leaf,
                    'ccp_alpha': ccp_alpha}
-    y_pred = generic_classifier(ct, tr_x, tr_y, te_x, random_grid)
+    y_pred, coef_dict = generic_classifier(ct, tr_x, tr_y, te_x, random_grid, column_headers, class_type)
 
-    return y_pred
+    return y_pred, coef_dict
 
 
-def random_forests(tr_x, tr_y, te_x):
+def random_forests(tr_x, tr_y, te_x, column_headers, class_type):
     rf = RandomForestClassifier()
 
     # Number of trees in random forest
@@ -149,28 +167,37 @@ def random_forests(tr_x, tr_y, te_x):
                    'min_samples_leaf': min_samples_leaf,
                    'bootstrap': bootstrap,
                    'ccp_alpha': ccp_alpha}
-    y_pred = generic_classifier(rf, tr_x, tr_y, te_x, random_grid)
+    y_pred, coef_dict = generic_classifier(rf, tr_x, tr_y, te_x, random_grid, column_headers, class_type)
 
-    return y_pred
+    return y_pred, coef_dict
 
 
-def generic_classifier(classifier, tr_x, tr_y, te_x, random_grid):
+def generic_classifier(classifier, tr_x, tr_y, te_x, random_grid, column_headers, class_type):
     # All classifiers use same method names, so we can just call these functions generically
     classifier = RandomizedSearchCV(estimator=classifier, param_distributions=random_grid, n_iter=10, cv=4, verbose=0,
                                     random_state=42, n_jobs=-1)
     classifier = classifier.fit(tr_x, tr_y)
-    # print(classifier.best_params_)
     best_classifier = classifier.best_estimator_
-
-    #TODO: beste feauters vinden plzzzz
-    # print(type(best_classifier))
-    # if type(best_classifier) == 'sklearn.linear_model._logistic.LogisticRegression':
-    #     print("YEET")
-    #     print(best_classifier.coef_)
-
+    coef_dict = get_coef_dict(best_classifier, column_headers, class_type)
     y_pred = best_classifier.predict(te_x)
 
-    return y_pred
+    return y_pred, coef_dict
+
+
+def get_coef_dict(best_classifier, column_headers, class_type):
+    if class_type == "MNB" or class_type == "RLR":
+        feature_coefs = list(zip(best_classifier.coef_[0], column_headers))
+    else:
+        feature_coefs = list(zip(best_classifier.feature_importances_.tolist(), column_headers))
+
+    feature_coefs.sort(key=lambda tup: tup[0])
+    most_neg = feature_coefs[0][0]
+    feature_coefs = [(x - most_neg, j) for x, j in feature_coefs]
+    feature_coefs_norm = [(float(i) / max(i for i, j in feature_coefs), j) for i, j in feature_coefs]
+    # coef_dict = {k: v for v, k in feature_coefs_norm}
+    # coef_dict = {k: v for k, v in sorted(coef_dict.items(), key=lambda item: item[1])}
+
+    return feature_coefs_norm
 
 
 print("Without bi_grams:")
