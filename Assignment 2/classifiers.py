@@ -15,6 +15,7 @@ def main(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
     all_data, column_headers = features.add_features(with_bi_grams, min_uni_gram_count, min_bi_gram_count)
     tr_x, tr_y, te_x, te_y = split_data(all_data)
 
+
     mnb_y, coef_dict_mnb = multinomial_naive_bayes(tr_x, tr_y, te_x, column_headers, "MNB")
     mnb_perf = performance(te_y, mnb_y, "MNB")
 
@@ -44,7 +45,7 @@ def split_data(data):
     test_x = test_data[:, :-1]
     test_y = test_data[:, -1].astype('int')
 
-    return training_x, training_y, test_x, test_y
+    return training_x, training_y, test_x, test_y,
 
 
 def performance(y_true, y_pred, classifier):
@@ -174,6 +175,7 @@ def generic_classifier(classifier, tr_x, tr_y, te_x, random_grid, column_headers
                                     random_state=42, n_jobs=-1)
     classifier = classifier.fit(tr_x, tr_y)
     best_classifier = classifier.best_estimator_
+    print(classifier.best_params_)
     coef_dict = get_coef_dict(best_classifier, column_headers, class_type)
     y_pred = best_classifier.predict(te_x)
 
@@ -234,7 +236,7 @@ def loop_through_min_features(with_bi_grams):
             f = open('performance' + title + '.pkl', 'wb')
             pickle.dump([y_mnb, y_rlr, y_ct, y_rf, min_count_list], f)
         f.close()
-
+    plt.rcParams.update({'font.size': 14})
     fig, ax = plt.subplots()
     ax.scatter(x_axis, y_mnb, c="#191e38", label="MNB")
     ax.scatter(x_axis, y_rlr, c="#0ba667", label="RLR")
@@ -243,6 +245,7 @@ def loop_through_min_features(with_bi_grams):
 
     ax.legend()
     plt.xlim(min_count_list[0]-1, min_count_list[-1]+1)
+
     plt.ylim(0.5, 1.0)
     plt.xticks(min_count_list)
     plt.xlabel('Min feature count')
