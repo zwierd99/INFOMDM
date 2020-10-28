@@ -6,11 +6,13 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
-from collections import Counter
+import matplotlib.pyplot as plt
+import pickle
+import os
 
 
-def main(with_bi_grams):
-    all_data, column_headers = features.add_features(with_bi_grams)
+def main(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
+    all_data, column_headers = features.add_features(with_bi_grams, min_uni_gram_count, min_bi_gram_count)
     tr_x, tr_y, te_x, te_y = split_data(all_data)
 
     mnb_y, coef_dict_mnb = multinomial_naive_bayes(tr_x, tr_y, te_x, column_headers, "MNB")
@@ -28,6 +30,8 @@ def main(with_bi_grams):
     best_features(coef_dict_mnb, coef_dict_rlr, coef_dict_ct, coef_dict_rf)
 
     show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf)
+
+    return mnb_perf, rlr_perf, ct_perf, rf_perf
 
 
 def split_data(data):
@@ -66,18 +70,10 @@ def show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf):
 
 
 def best_features(coef_dict_mnb, coef_dict_rlr, coef_dict_ct, coef_dict_rf):
-    # TODO: Combineren van verschillende lijsten om een feature importance list te krijgen, weten nog niet precies hoe
-    # TODO: mss ff steven vragen
-
     print("MNB_features:\n", coef_dict_mnb[:5], "\n", coef_dict_mnb[-5:])
     print("RLR_features:\n", coef_dict_rlr[:5], "\n", coef_dict_rlr[-5:])
     print("CT_features:\n", coef_dict_ct[:5], "\n", coef_dict_ct[-5:])
     print("RF_features:\n", coef_dict_rf[:5], "\n", coef_dict_rf[-5:])
-
-    # TODO: Dit werkt niet helemaal, maar het heeft wel de spirit te pakken
-    # combined_dict = Counter(coef_dict_mnb) + Counter(coef_dict_rlr) + Counter(coef_dict_ct) + Counter(coef_dict_rf)
-    # combined_dict = {k: v for k, v in sorted(combined_dict.items(), key=lambda item: item[1])}
-    # print("All_features:\n", combined_dict[:5], "\n", combined_dict[-5:])
 
 
 def multinomial_naive_bayes(tr_x, tr_y, te_x, column_headers, class_type):
@@ -156,7 +152,7 @@ def random_forests(tr_x, tr_y, te_x, column_headers, class_type):
     # Minimum number of samples required at each leaf node
     min_samples_leaf = [1, 2, 4]
     # Method of selecting samples for training each tree
-    bootstrap = [True, False]  # Create the random grid
+    bootstrap = [True, False]
     # Complexity parameter used for Minimal Cost-Complexity Pruning
     ccp_alpha = [x for x in np.linspace(start=0.0, stop=1.0, num=5)]
 
@@ -194,13 +190,72 @@ def get_coef_dict(best_classifier, column_headers, class_type):
     most_neg = feature_coefs[0][0]
     feature_coefs = [(x - most_neg, j) for x, j in feature_coefs]
     feature_coefs_norm = [(float(i) / max(i for i, j in feature_coefs), j) for i, j in feature_coefs]
-    # coef_dict = {k: v for v, k in feature_coefs_norm}
-    # coef_dict = {k: v for k, v in sorted(coef_dict.items(), key=lambda item: item[1])}
 
     return feature_coefs_norm
 
 
+def loop_through_min_features(with_bi_grams):
+    min_count_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    x_axis = min_count_list
+    y_mnb = []
+    y_rlr = []
+    y_ct = []
+    y_rf = []
+
+    if with_bi_grams:
+        title = "bigrams"
+    else:
+        title = "unigrams"
+
+    if not os.path.exists('performance' + title + '.pkl'):
+        for i in min_count_list:
+            mnb_perf, rlr_perf, ct_perf, rf_perf = main(with_bi_grams, i, i)
+            y_mnb.append(mnb_perf[1])  # accuracy van mnb
+            y_rlr.append(rlr_perf[1])
+            y_ct.append(ct_perf[1])
+            y_rf.append(rf_perf[1])
+        f = open('performance' + title + '.pkl', 'wb')
+        pickle.dump([y_mnb, y_rlr, y_ct, y_rf, min_count_list], f)
+        f.close()
+    else:
+        f = open('performance' + title + '.pkl', 'rb')
+        y_mnb, y_rlr, y_ct, y_rf, min_count_list_pkl = pickle.load(f)
+        if not min_count_list == min_count_list_pkl:
+            y_mnb = []
+            y_rlr = []
+            y_ct = []
+            y_rf = []
+            for i in min_count_list:
+                mnb_perf, rlr_perf, ct_perf, rf_perf = main(with_bi_grams, i, i)
+                y_mnb.append(mnb_perf[1])  # accuracy van mnb
+                y_rlr.append(rlr_perf[1])
+                y_ct.append(ct_perf[1])
+                y_rf.append(rf_perf[1])
+            f = open('performance' + title + '.pkl', 'wb')
+            pickle.dump([y_mnb, y_rlr, y_ct, y_rf, min_count_list], f)
+        f.close()
+
+    fig, ax = plt.subplots()
+    ax.scatter(x_axis, y_mnb, c="#191e38", label="MNB")
+    ax.scatter(x_axis, y_rlr, c="#0ba667", label="RLR")
+    ax.scatter(x_axis, y_ct, c="#b93132", label="CT")
+    ax.scatter(x_axis, y_rf, c="#ffbf5b", label="RF")
+
+    ax.legend()
+    plt.xlim(min_count_list[0]-1, min_count_list[-1]+1)
+    plt.ylim(0.5, 1.0)
+    plt.xticks(min_count_list)
+    plt.xlabel('Min feature count')
+    plt.ylabel('Accuracy')
+    if with_bi_grams:
+        plt.title("Unigrams and Bigrams")
+    else:
+        plt.title("Unigrams")
+
+    plt.show()
+
+
 print("Without bi_grams:")
-main(False)
+loop_through_min_features(False)
 print("\nWith bi_grams:")
-main(True)
+loop_through_min_features(True)

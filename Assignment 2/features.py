@@ -5,11 +5,11 @@ import pandas as pd
 
 # nltk.download('wordnet')
 
-min_uni_gram_count = 100    # 30 is wel gucci
-min_bi_gram_count = 100     # 10 is wel gucci
+# min_uni_gram_count = 100    # 30 is wel gucci
+# min_bi_gram_count = 100     # 10 is wel gucci
 
 
-def add_features(with_bi_grams):
+def add_features(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
     deceptive_train, deceptive_test, truthful_train, truthful_test = extract.extract_all()
 
     # train_data = 640 rows, test_data = 160 rows
@@ -17,13 +17,13 @@ def add_features(with_bi_grams):
     test_data = np.concatenate((deceptive_test, truthful_test), axis=0)
     combined_data = np.concatenate((train_data, test_data), axis=0)
 
-    uni_gram_columns, column_headers = create_uni_gram_columns(combined_data)
+    uni_gram_columns, column_headers = create_uni_gram_columns(combined_data, min_uni_gram_count)
 
     features = np.array(char_length(combined_data))
     features = np.append(features, uni_gram_columns, axis=1)
 
     if with_bi_grams:
-        bi_gram_columns, column_headers_2 = create_bi_gram_columns(combined_data)
+        bi_gram_columns, column_headers_2 = create_bi_gram_columns(combined_data, min_bi_gram_count)
         features = np.append(features, bi_gram_columns, axis=1)
         column_headers = column_headers + column_headers_2
 
@@ -34,7 +34,7 @@ def add_features(with_bi_grams):
     return data_with_features, column_headers
 
 
-def create_uni_gram_columns(data):
+def create_uni_gram_columns(data, min_uni_gram_count):
     uni_gram_dict = {}
     for row in data:
         for uni_gram in row[0].split():
@@ -67,7 +67,7 @@ def fill_uni_gram_columns(data, uni_gram_dict):
     return harry_df.to_numpy(), column_headers
 
 
-def create_bi_gram_columns(data):
+def create_bi_gram_columns(data, min_bi_gram_count):
     bi_gram_dict = {}
     for row in data:
         for bi_gram in ngrams(row[0].split(), 2):
