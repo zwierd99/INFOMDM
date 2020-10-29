@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os
-
+from mlxtend.evaluate import mcnemar_table, mcnemar
 
 def main(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
     all_data, column_headers = features.add_features(with_bi_grams, min_uni_gram_count, min_bi_gram_count)
@@ -31,9 +31,38 @@ def main(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
     best_features(coef_dict_mnb, coef_dict_rlr, coef_dict_ct, coef_dict_rf)
 
     show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf)
-
+    show_mcnemars(te_y, mnb_y, rlr_y, ct_y, rf_y)
     return mnb_perf, rlr_perf, ct_perf, rf_perf
 
+def show_mcnemars(tr_y, mnb_y, rlr_y, ct_y, rf_y):
+    y_target = np.array(tr_y)
+    mnb_rlr = ("McNemar for MNB vs RLR", mcnemar_table(y_target=y_target,
+                       y_model1=np.array(mnb_y),
+                       y_model2=np.array(rlr_y)))
+    mnb_ct =("McNemar for MNB vs CT", mcnemar_table(y_target=y_target,
+                       y_model1=np.array(mnb_y),
+                       y_model2=np.array(ct_y)))
+    mnb_rf =("McNemar for MNB vs RF", mcnemar_table(y_target=y_target,
+                       y_model1=np.array(mnb_y),
+                       y_model2=np.array(rf_y)))
+    rlr_ct =("McNemar for RLR vs CT", mcnemar_table(y_target=y_target,
+                       y_model1=np.array(rlr_y),
+                       y_model2=np.array(ct_y)))
+    rlr_rf =("McNemar for RLR vs RF", mcnemar_table(y_target=y_target,
+                       y_model1=np.array(rlr_y),
+                       y_model2=np.array(rf_y)))
+    ct_rf =("McNemar for CT vs RF", mcnemar_table(y_target=y_target,
+                       y_model1=np.array(ct_y),
+                       y_model2=np.array(rf_y)))
+
+
+    for comparison in [mnb_rlr, mnb_ct, mnb_rf, rlr_ct, rlr_rf, ct_rf]:
+        print(comparison[0])
+        chi2, p = mcnemar(ary=comparison[1])
+
+        print('chi-squared:', chi2)
+        print('p-value:', p)
+        print()
 
 def split_data(data):
     training_data = data[:640, 1:]
@@ -197,7 +226,7 @@ def get_coef_dict(best_classifier, column_headers, class_type):
 
 
 def loop_through_min_features(with_bi_grams):
-    min_count_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    min_count_list = [30]
     x_axis = min_count_list
     y_mnb = []
     y_rlr = []
@@ -255,7 +284,7 @@ def loop_through_min_features(with_bi_grams):
     else:
         plt.title("Unigrams")
 
-    plt.show()
+    #plt.show()
 
 
 print("Without bi_grams:")
