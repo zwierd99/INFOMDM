@@ -10,7 +10,14 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 from mlxtend.evaluate import mcnemar_table, mcnemar
-
+mnbBigram = []
+mnbUnigram =[]
+rlrBigram = []
+rlrUnigram = []
+ctBigram = []
+ctUnigram = []
+rfBigram = []
+rfUnigram = []
 def main(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
     all_data, column_headers = features.add_features(with_bi_grams, min_uni_gram_count, min_bi_gram_count)
     tr_x, tr_y, te_x, te_y = split_data(all_data)
@@ -31,11 +38,29 @@ def main(with_bi_grams, min_uni_gram_count, min_bi_gram_count):
     best_features(coef_dict_mnb, coef_dict_rlr, coef_dict_ct, coef_dict_rf)
 
     show_scores(mnb_perf, rlr_perf, ct_perf, rf_perf)
+    global mnbBigram
+    global mnbUnigram
+    global rlrBigram
+    global rlrUnigram
+    global ctBigram
+    global ctUnigram
+    global rfBigram
+    global rfUnigram
+    if with_bi_grams:
+        mnbBigram = mnb_y
+        rlrBigram = rlr_y
+        ctBigram = ct_y
+        rfBigram = rf_y
+    else:
+        mnbUnigram = mnb_y
+        rlrUnigram = rlr_y
+        ctUnigram = ct_y
+        rfUnigram = rf_y
     show_mcnemars(te_y, mnb_y, rlr_y, ct_y, rf_y)
     return mnb_perf, rlr_perf, ct_perf, rf_perf
 
-def show_mcnemars(tr_y, mnb_y, rlr_y, ct_y, rf_y):
-    y_target = np.array(tr_y)
+def show_mcnemars(te_y, mnb_y, rlr_y, ct_y, rf_y):
+    y_target = np.array(te_y)
     mnb_rlr = ("McNemar for MNB vs RLR", mcnemar_table(y_target=y_target,
                        y_model1=np.array(mnb_y),
                        y_model2=np.array(rlr_y)))
@@ -54,8 +79,6 @@ def show_mcnemars(tr_y, mnb_y, rlr_y, ct_y, rf_y):
     ct_rf =("McNemar for CT vs RF", mcnemar_table(y_target=y_target,
                        y_model1=np.array(ct_y),
                        y_model2=np.array(rf_y)))
-
-
     for comparison in [mnb_rlr, mnb_ct, mnb_rf, rlr_ct, rlr_rf, ct_rf]:
         print(comparison[0])
         chi2, p = mcnemar(ary=comparison[1])
@@ -63,6 +86,38 @@ def show_mcnemars(tr_y, mnb_y, rlr_y, ct_y, rf_y):
         print('chi-squared:', chi2)
         print('p-value:', p)
         print()
+    global mnbBigram
+    global mnbUnigram
+    global rlrBigram
+    global rlrUnigram
+    global ctBigram
+    global ctUnigram
+    global rfBigram
+    global rfUnigram
+    if len(mnbBigram) > 0:
+        print("Unigrams vs Bigrams")
+        mnb = ("McNemar for MNB unigram vs MNB bigram", mcnemar_table(y_target=y_target,
+                                                                      y_model1=np.array(mnbBigram),
+                                                                      y_model2=np.array(mnbUnigram)))
+        rlr = ("McNemar for RLR unigram vs RLR bigram", mcnemar_table(y_target=y_target,
+                                                                      y_model1=np.array(rlrBigram),
+                                                                      y_model2=np.array(rlrUnigram)))
+        ct = ("McNemar for CT unigram vs CT bigram", mcnemar_table(y_target=y_target,
+                                                                      y_model1=np.array(ctBigram),
+                                                                      y_model2=np.array(ctUnigram)))
+        rf = ("McNemar for RF unigram vs RF bigram", mcnemar_table(y_target=y_target,
+                                                                      y_model1=np.array(rfBigram),
+                                                                      y_model2=np.array(rfUnigram)))
+        for comparison in [mnb, rlr, ct, rf]:
+            print(comparison[0])
+            chi2, p = mcnemar(ary=comparison[1])
+
+            print('chi-squared:', chi2)
+            print('p-value:', p)
+            print()
+
+
+
 
 def split_data(data):
     training_data = data[:640, 1:]
